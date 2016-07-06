@@ -1,7 +1,7 @@
 FROM debian:wheezy
 MAINTAINER twoboxen <hawkins22gmail.com>
 
-RUN mkdir -p /usr/local/bin
+RUN mkdir -p /usr/local/bin \
   && apt-get update -q \
   && apt-get install -qy python handbrake-cli \
   && apt-get clean \
