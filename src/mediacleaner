@@ -1,0 +1,93 @@
+#!/bin/bash
+
+EXTENSIONS=(3gp avi mp4 m4v mkv mov mpg mp3g mts wmv)
+OUTPUT_EXTENSION=mp4
+BITRATE=${BITRATE:-1500}
+RENAMER=mediafiler
+
+while getopts ":rd:l" opt; do
+	case $opt in
+		l)
+			LOOP=true
+			;;
+		r)
+			RENAME_MEDIA=true
+			;;
+		d)
+			RENAME_DIRECTORY="$OPTARG" >&2
+			;;
+		\?)
+			echo "Invalid option: -$OPTARG" >&2
+			exit 1
+			;;
+	esac
+	shift $((OPTIND-1)); OPTIND=1
+done
+
+echo "Converting entries in $@, looping=$LOOP, renaming=$RENAME_MEDIA (and putting in $RENAME_DIRECTORY)..."
+
+
+function convert_file {
+	EXTENSION=`echo ${1/*./}`
+    LEXTENSION=`echo $EXTENSION | tr '[A-Z]' '[a-z]'`
+	BASE_FILE=`echo ${1/%.$EXTENSION/}`
+	INNER_EXTENSION=`echo ${BASE_FILE/*./}`
+	LINNER_EXTENSION=`echo $INNER_EXTENSION | tr '[A-Z]' '[a-z]'`
+
+	for E in ${EXTENSIONS[@]}; do
+		if [ "$E" = "$LINNER_EXTENSION" ]; then
+			# already converted
+			return
+		fi
+	done
+
+	for E in ${EXTENSIONS[@]}; do
+		if [ "$E" = "$LEXTENSION" ]; then
+			# has a convertable file extension, ensure it wasn't already converted
+			BASE_FILE=`echo ${1/%.$EXTENSION/}`
+			NEW_FILE=$1.$OUTPUT_EXTENSION
+#			NEW_FILE=`echo ${1/%.$EXTENSION/.$OUTPUT_EXTENSION}`
+#			nice HandBrakeCLI -i $1 -o $NEW_FILE -e x264 -b $BITRATE -a 1 -E faac -B 160 -R 48 -6 dpl2 -f mp4 --crop 0:0:0:0 -O -x level=40:ref=2:mixed-refs:bframes=3:weightb:subme=9:direct=auto:me=umh:analyse=all:no-fast-pskip:filter=-2,-1 && mv $1 $1.converted && echo "Done converting $1 to $NEW_FILE"
+			nice HandBrakeCLI -i $1 -o $NEW_FILE --encoder x264 --vb $BITRATE --format mp4 --optimize --large-file --aencoder faac --arate 48 --mixdown dpl2 && mv $1 $1.converted && echo "Done converting $1 to $NEW_FILE"
+
+			if [ "${RENAME_MEDIA}" ]; then
+				if [ "${RENAME_DIRECTORY}" ]; then
+					echo "Renaming ${NEW_FILE} and putting in ${RENAME_DIRECTORY}"
+					${RENAMER} -o ${RENAME_DIRECTORY} "${NEW_FILE}"
+				else
+					echo "Renaming ${NEW_FILE}"
+					${RENAMER} "${NEW_FILE}"
+				fi
+			fi
+			break
+		fi
+	done
+}
+
+function convert {
+	SAVEIFS=$IFS
+	IFS=$(echo -en "\n\b")
+	for FILE in `find "$1" -type f`; do
+		convert_file "$FILE"
+	done
+	IFS=$SAVEIFS
+}
+
+function convert_entries {
+	SAVEIFS=$IFS
+	IFS=$(echo -en "\n\b")
+	for ARG in "$@"
+	do
+		convert $ARG
+	done
+	IFS=$SAVEIFS
+}
+
+if [ -z "${LOOP}" ]; then
+	convert_entries "$@"
+else
+	while [ 1 ]; do
+		convert_entries "$@"
+		sleep 300
+	done
+fi

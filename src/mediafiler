@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+import argparse
+import re
+import os
+import shutil
+
+parser = argparse.ArgumentParser(description='File your media files.')
+parser.add_argument('filesOrDirectories', metavar='file', type=str, nargs='+',
+				   help='files or directories to file')
+parser.add_argument('-o', '--output', dest='destination', type=str,
+				   help='the destination directory for the files')
+parser.add_argument('-s', '--simulate', dest='simulate', action='store_true',
+				   help='don\'t actually move or rename, just simulate')
+parser.set_defaults(simulate=False)
+
+args = parser.parse_args()
+
+episodematcher = re.compile('(.*)[sS](\d\d)[eE](\d\d)(.*)\.mp4')
+convertedmatcher = re.compile('(.*)\.(\d?\d)(\d\d)\.mp4')
+def handleFile(file):
+	fileName = os.path.basename(file)
+	m = episodematcher.search(fileName)
+	if m == None:
+		m = convertedmatcher.search(fileName)
+		if m == None:
+			return
+	if "sample" in fileName.lower():
+		return
+
+	show = "".join([part[:1].upper() + part[1:].lower() for part in re.split('[ \.]', m.group(1))])
+	season = int(m.group(2))
+	episode = int(m.group(3))
+
+	if args.destination == None:
+		destFolder = directory
+	else:
+		destFolder = os.path.join(args.destination, show, "season%02d" % season)
+	destFileName = "%s.%d%02d.mp4" % (show, season, episode)
+	destFile = os.path.join(destFolder, destFileName)
+
+	if args.simulate:
+		print "[SIMULATED] moving %s to %s" % (file, destFile)
+		return
+
+	if not os.path.exists(destFolder):
+		os.makedirs(destFolder)
+
+	shutil.move(file, destFile)
+	print file, " moved to ", destFile
+
+def handle(directory, fileOrDirectory):
+	if os.path.isdir(fileOrDirectory):
+		for child in os.listdir(fileOrDirectory):
+			handle(os.path.join(directory, fileOrDirectory), child)
+	else:
+		handleFile(os.path.join(directory, fileOrDirectory))
+
+for fileOrDirectory in args.filesOrDirectories:
+	handle(os.getcwd(), fileOrDirectory)
