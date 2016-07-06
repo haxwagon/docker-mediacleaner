@@ -1,4 +1,4 @@
-FROM debian:wheezy
+FROM debian:jessie
 MAINTAINER twoboxen <hawkins22gmail.com>
 
 RUN mkdir -p /usr/local/bin \
