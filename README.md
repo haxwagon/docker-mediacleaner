@@ -13,5 +13,5 @@
 
 The quickest way to get it running without integrating with a download client or media server (plex)
 ```
-sudo docker run --name mediacleaner -v /path/to/your/input/media/files:/volumes/source -v /path/to/your/output/files:/volumes/destination twoboxen/mediacleaner
+sudo docker run --name mediacleaner -v /path/to/your/input/media/files:/volumes/source -v /path/to/your/output/files:/volumes/destination twoboxen/docker-mediacleaner
 ```
