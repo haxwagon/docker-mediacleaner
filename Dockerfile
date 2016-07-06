@@ -17,4 +17,4 @@ RUN chmod +x /media*
 ENV PATH /:$PATH
 
 ENTRYPOINT ["mediacleaner"]
-CMD ["-r", "-d", "/volumes/destination", "/volumes/source"]
+CMD ["-l", "-r", "-d", "/volumes/destination", "/volumes/source"]
