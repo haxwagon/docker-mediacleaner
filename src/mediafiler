@@ -28,7 +28,8 @@ def handleFile(file):
 	if "sample" in fileName.lower():
 		return
 
-	show = "".join([part[:1].upper() + part[1:].lower() for part in re.split('[ \.]', m.group(1))])
+	show = "".join([part[:1].upper() + part[1:].lower() for part in re.split('[ \.-]', m.group(1))])
+	show = re.sub('[\']', '', show)
 	season = int(m.group(2))
 	episode = int(m.group(3))
 
