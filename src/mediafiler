@@ -16,22 +16,40 @@ parser.set_defaults(simulate=False)
 
 args = parser.parse_args()
 
-episodematcher = re.compile('(.*)[sS](\d\d)[eE](\d\d)(.*)\.mp4')
+episodematcher = re.compile('(.*)[sS](\d\d)[eE](\d\d)(.*)')
 convertedmatcher = re.compile('(.*)\.(\d?\d)(\d\d)\.mp4')
-def handleFile(file):
-	fileName = os.path.basename(file)
-	m = episodematcher.search(fileName)
+def findSeasonEpisode(s):
+	m = episodematcher.search(s)
 	if m == None:
-		m = convertedmatcher.search(fileName)
+		m = convertedmatcher.search(s)
 		if m == None:
-			return
-	if "sample" in fileName.lower():
-		return
+			return ("", 0, 0)
+	if "sample" in s.lower():
+		return ("", 0, 0)
 
 	show = "".join([part[:1].upper() + part[1:].lower() for part in re.split('[ \.-]', m.group(1))])
 	show = re.sub('[\']', '', show)
 	season = int(m.group(2))
 	episode = int(m.group(3))
+	return (show, season, episode)
+
+moviematcher = re.compile('(.*)\.mp4')
+def handleFile(file):
+	fileName = os.path.basename(file)
+
+	# only check movies
+	m = moviematcher.search(fileName)
+	if m == None:
+		return
+
+	# try to extract the show info from the filename
+	show, season, episode = findSeasonEpisode(fileName)
+	if len(show) <= 0:
+		# filename didn't work, now try the parent directory
+		dirName = os.path.split(os.path.dirname(file))[1]
+		show, season, episode = findSeasonEpisode(dirName)
+		if len(show) <= 0:
+			return
 
 	if args.destination == None:
 		destFolder = directory
@@ -51,11 +69,12 @@ def handleFile(file):
 	print file, " moved to ", destFile
 
 def handle(directory, fileOrDirectory):
-	if os.path.isdir(fileOrDirectory):
-		for child in os.listdir(fileOrDirectory):
-			handle(os.path.join(directory, fileOrDirectory), child)
+	fullPath = os.path.join(directory, fileOrDirectory)
+	if os.path.isdir(fullPath):
+		for child in os.listdir(fullPath):
+			handle(fullPath, child)
 	else:
-		handleFile(os.path.join(directory, fileOrDirectory))
+		handleFile(fullPath)
 
 for fileOrDirectory in args.filesOrDirectories:
 	handle(os.getcwd(), fileOrDirectory)
