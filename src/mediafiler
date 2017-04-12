@@ -19,13 +19,13 @@ args = parser.parse_args()
 episodematcher = re.compile('(.*)[sS](\d\d)[eE](\d\d)(.*)')
 convertedmatcher = re.compile('(.*)\.(\d?\d)(\d\d)\.mp4')
 def findSeasonEpisode(s):
+	if "sample" in s.lower():
+		return ("", 0, 0)
 	m = episodematcher.search(s)
 	if m == None:
 		m = convertedmatcher.search(s)
 		if m == None:
 			return ("", 0, 0)
-	if "sample" in s.lower():
-		return ("", 0, 0)
 
 	show = "".join([part[:1].upper() + part[1:].lower() for part in re.split('[ \.-]', m.group(1))])
 	show = re.sub('[\']', '', show)
