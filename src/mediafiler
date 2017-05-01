@@ -12,7 +12,9 @@ parser.add_argument('-o', '--output', dest='destination', type=str,
 				   help='the destination directory for the files')
 parser.add_argument('-s', '--simulate', dest='simulate', action='store_true',
 				   help='don\'t actually move or rename, just simulate')
-parser.set_defaults(simulate=False)
+parser.add_argument('-t', '--test', dest='test', action='store_true',
+				   help='don\'t actually move or rename, just test')
+parser.set_defaults(simulate=False, test=False)
 
 args = parser.parse_args()
 
@@ -25,11 +27,16 @@ def findSeasonEpisode(s):
 		if m == None:
 			return ("", 0, 0)
 
-	show = "".join([part[:1].upper() + part[1:].lower() for part in re.split('[ \.-]', m.group(1))])
+
+	show = "".join([part[:1].upper() + part[1:].lower() for part in re.split('[\_ \.-]', m.group(1))])
+	show = re.sub('[\(\[].*?[\)\]]', '', show)
 	show = re.sub('[\']', '', show)
 	season = int(m.group(2))
 	episode = int(m.group(3))
 	return (show, season, episode)
+
+def buildFileName(show, season, episode):
+	return "%s.%d%02d.mp4" % (show, season, episode)
 
 moviematcher = re.compile('(.*)\.mp4')
 def handleFile(file):
@@ -57,7 +64,7 @@ def handleFile(file):
 		destFolder = directory
 	else:
 		destFolder = os.path.join(args.destination, show, "season%02d" % season)
-	destFileName = "%s.%d%02d.mp4" % (show, season, episode)
+	destFileName = buildFileName(show, season, episode)
 	destFile = os.path.join(destFolder, destFileName)
 
 	if args.simulate:
@@ -77,6 +84,18 @@ def handle(directory, fileOrDirectory):
 			handle(fullPath, child)
 	else:
 		handleFile(fullPath)
+
+if args.test:
+	fileNameTests = {
+		'the.Big.Bang_theory.s03e01.avi.mp4': 'TheBigBangTheory.301.mp4',
+		'[something awesome] the . Big .Bang_theory (remixed).s03e01.avi.mp4': 'TheBigBangTheory.301.mp4'
+	}
+	for pre, expected in fileNameTests.iteritems():
+		(show, season, episode) = findSeasonEpisode(pre)
+		actual = "%s.%d%02d.mp4" % (show, season, episode)
+		msg = "expected=%s, actual=%s" % (expected, actual)
+		assert expected == actual, msg
+	exit
 
 for fileOrDirectory in args.filesOrDirectories:
 	handle(os.getcwd(), fileOrDirectory)
