@@ -60,6 +60,13 @@ def handleFile(file):
 		if len(show) <= 0:
 			return
 
+	# skip files that are too small (<= 10MB)
+	try:
+		if os.path.getsize(file) <= (10 * 1000000):
+			return
+	except:
+		return
+
 	if args.destination == None:
 		destFolder = directory
 	else:
