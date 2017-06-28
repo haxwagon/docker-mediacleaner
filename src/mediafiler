@@ -60,9 +60,9 @@ def handleFile(file):
 		if len(show) <= 0:
 			return
 
-	# skip files that are too small (<= 10MB)
+	# skip files that are too small (<= 20MB)
 	try:
-		if os.path.getsize(file) <= (10 * 1000000):
+		if os.path.getsize(file) <= (20 * 1000000):
 			return
 	except:
 		return
