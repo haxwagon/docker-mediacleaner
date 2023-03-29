@@ -47,7 +47,7 @@ function convert_file {
 			# has a convertable file extension, ensure it wasn't already converted
 			BASE_FILE=`echo ${1/%.$EXTENSION/}`
 			NEW_FILE=$1.$OUTPUT_EXTENSION
-			nice HandBrakeCLI -i $1 -o $NEW_FILE --encoder x264 --vb $BITRATE --format mp4 --optimize --large-file --aencoder faac --arate $ABITRATE --mixdown dpl2 && mv $1 $1.converted && echo "Done converting $1 to $NEW_FILE"
+			nice HandBrakeCLI -i $1 -o $NEW_FILE --encoder x264 --vb $BITRATE --format mp4 --optimize --aencoder faac --arate $ABITRATE --mixdown dpl2 && mv $1 $1.converted && echo "Done converting $1 to $NEW_FILE"
 
 			if [ "${RENAME_MEDIA}" ]; then
 				if [ "${RENAME_DIRECTORY}" ]; then
