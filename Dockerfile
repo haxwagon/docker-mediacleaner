@@ -3,7 +3,7 @@ MAINTAINER twoboxen <hawkins22gmail.com>
 
 RUN mkdir -p /usr/local/bin \
   && apt-get update -q \
-  && apt-get install -qy python handbrake-cli \
+  && apt-get install -qy bash handbrake-cli jq mediainfo python \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -16,5 +16,4 @@ RUN chmod +x /media*
 
 ENV PATH /:$PATH
 
-ENTRYPOINT ["mediacleaner"]
-CMD ["-l", "-r", "-d", "/volumes/destination", "/volumes/source"]
+CMD ["mediacleaner", "-l", "-r", "-d", "/volumes/destination", "/volumes/source"]
