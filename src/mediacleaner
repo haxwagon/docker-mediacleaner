@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 EXTENSIONS=(3gp avi mp4 m4v mkv mov mpg mp3g mts wmv)
 OUTPUT_EXTENSION=mp4
-BITRATE=${BITRATE:-2048}
+BITRATE=${BITRATE:-1500}
 RENAMER=mediafiler
 
 while getopts ":rd:l" opt; do
@@ -26,7 +26,6 @@ done
 
 echo "Converting entries in $@, looping=$LOOP, renaming=$RENAME_MEDIA (and putting in $RENAME_DIRECTORY)..."
 
-
 function convert_file {
 	EXTENSION=`echo ${1/*./}`
     LEXTENSION=`echo $EXTENSION | tr '[A-Z]' '[a-z]'`
@@ -46,17 +45,18 @@ function convert_file {
 			# has a convertable file extension, ensure it wasn't already converted
 			BASE_FILE=`echo ${1/%.$EXTENSION/}`
 			NEW_FILE=$1.$OUTPUT_EXTENSION
-
-			CURR_BITRATE=`mediainfo --output=JSON '$1' | jq -c '.media.track[] | select(."@type"== "Video") | (.BitRate | tonumber) / (.BitDepth | tonumber) / 1000 | floor'`
-
-			VBITRATE=$BITRATE
-			if [ $CURR_BITRATE -lt $VBITRATE ]; then
-				echo "Keeping current bitrate"
-				VBITRATE=$CURR_BITRATE
-			fi
-			echo "Will use video bitrate of $VBITRATE."
-
-			nice HandBrakeCLI -i $1 -o $NEW_FILE --encoder x264 --vb $VBITRATE --format mp4 --optimize --aencoder faac --mixdown dpl2 && mv $1 $1.converted && echo "Done converting $1 to $NEW_FILE"
+#			NEW_FILE=`echo ${1/%.$EXTENSION/.$OUTPUT_EXTENSION}`
+#			nice HandBrakeCLI -i $1 -o $NEW_FILE -e x264 -b $BITRATE -a 1 -E faac -B 160 -R 48 -6 dpl2 -f mp4 --crop 0:0:0:0 -O -x level=40:ref=2:mixed-refs:bframes=3:weightb:subme=9:direct=auto:me=umh:analyse=all:no-fast-pskip:filter=-2,-1 && mv $1 $1.converted && echo "Done converting $1 to $NEW_FILE"
+#			nice HandBrakeCLI -i $1 -o $NEW_FILE --encoder x264 --vb $BITRATE --format mp4 --optimize --large-file --aencoder faac --arate 48 --mixdown dpl2 && mv $1 $1.converted && echo "Done converting $1 to $NEW_FILE"
+			
+			#	-c:v libx264 -crf 19 -level 3.1 -preset slow -tune film \
+			ffmpeg -i $1 \
+				-movflags faststart \
+				-preset ultrafast -c:v libx265 -crf 23 \
+				-filter:v scale=-1:720 -sws_flags lanczos \
+				-c:a aac -q 5 \
+				-maxrate 3M -bufsize 4M \
+				$NEW_FILE
 
 			if [ "${RENAME_MEDIA}" ]; then
 				if [ "${RENAME_DIRECTORY}" ]; then
